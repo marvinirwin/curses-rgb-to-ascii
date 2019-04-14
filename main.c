@@ -1,11 +1,4 @@
 
-/*int main() {
-    printf("cursses colors: %d\n", COLORS);
-    return 0;
-}*/
-
-
-
 #include <curses.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,13 +6,23 @@
 #include <math.h>
 #include <memory.h>
 
+// The first non blank ASCII characters
+char charList[] = ".-`',:_;~\"/!|\\i^trc*v?s()+lj1=e{[]z}<xo7f>aJy3Iun542b6Lw9k#dghq80VpT$YACSFPUZ%mEGXNO&DKBR@HQWM";
+// greyscale will be at or between 0, 1
+char lookupChar(double greyscale) {
+    size_t max = strlen(charList);
+    // Round our greyscale value to the closest whole number
+    int place = (int) floor((max * greyscale) + 0.5);
+    return charList[place];
+}
+
 typedef struct s_color {
     uint8_t R,G,B;
     char color[200];
     short curse_color;
 } color;
-
-color colors[] = {
+// The colors our terminal can display
+color terminalColors[] = {
         {0, 0, 0, "black"},
         {255, 0, 0, "red"},
         {0, 255, 0, "green"},
@@ -29,25 +32,7 @@ color colors[] = {
         {0, 255, 255, "cyan"},
         {255, 255, 255, "white"},
 };
-
-double distance(color * p1, color * p2) {
-    int a = p2->R - p1->R;
-    int b = p2->G - p1->G;
-    int c = p2->B - p1->B;
-    double r = sqrt((a*a) + (b*b) + (c*c));
-    return r;
-}
-
-color * getClosestColor(color * c) {
-    color * closestCandidate = &colors[0];
-    for (int i = 1; i < 8; ++i) {
-        if (distance(closestCandidate, c) > distance(&colors[i], c)) {
-            closestCandidate = &colors[i];
-        }
-    }
-    return closestCandidate;
-}
-
+// The colors we have to "round" to be shown in the terminal
 color testPixels[] = {
         {244, 75, 66, "red-ish"},
         {244, 128, 66, "orange?"},
@@ -64,8 +49,27 @@ color testPixels[] = {
         {0, 0, 255, "this better be blue"}
 };
 
+double distance(color * p1, color * p2) {
+    int a = p2->R - p1->R;
+    int b = p2->G - p1->G;
+    int c = p2->B - p1->B;
+    double r = sqrt((a*a) + (b*b) + (c*c));
+    return r;
+}
+color * getClosestColor(color * c) {
+    color * closestCandidate = &terminalColors[0];
+    for (int i = 1; i < 8; ++i) {
+        if (distance(closestCandidate, c) > distance(&terminalColors[i], c)) {
+            closestCandidate = &terminalColors[i];
+        }
+    }
+    return closestCandidate;
+}
+
+
 int main(void)
 {
+    // Initialize curses
     initscr();
     keypad(stdscr, TRUE);
     cbreak();
@@ -78,23 +82,21 @@ int main(void)
     }
 
     start_color();
-    for (int j = 0; j < sizeof(colors) / sizeof(color); ++j) {
-        color * c = &colors[j];
+    for (int j = 0; j < sizeof(terminalColors) / sizeof(color); ++j) {
+        color * c = &terminalColors[j];
         short i = (short) (((c->R / 255) << 0) |
                            ((c->G / 255) << 1) |
                            ((c->B / 255) << 2));
         c->curse_color = (short) (j + 1);
-        if (can_change_color()) {
-            init_color(c->curse_color, c->R, c->G, c->B);
-        }
-
         init_pair(c->curse_color, i, COLOR_BLACK);
     }
     for (int i = 0; i < sizeof(testPixels) / sizeof(color); ++i) {
-        color * p = &testPixels[i];
-        color * match = getClosestColor(p);
+        color * c = &testPixels[i];
+        color * match = getClosestColor(c);
         attron(COLOR_PAIR(match->curse_color));
-        mvprintw(i, 0, "%s -> %s", p->color, match->color);
+        double g = ((.2126 * c->R) + (.7152 * c->G) + (.0722 * c->B)) / 255;
+        int ch = lookupChar(g);
+        mvprintw(i, 0, "%s -> %s -> %c", c->color, match->color, ch);
     }
 
     getch();

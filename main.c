@@ -38,7 +38,7 @@ color testPixels[] = {
         {244, 128, 66, "orange?"},
         {244, 226, 66, "sickly yellow"},
         {146, 244, 66, "pale light green"},
-        {66, 244, 89, "yellow"},
+        {66, 244, 89, "light green"},
         {66, 244, 158, "kind of turqois, I would expect mapped to cyan"},
         {66, 226, 244, "baby blue"},
         {66, 158, 244, "almost navy blue"},
